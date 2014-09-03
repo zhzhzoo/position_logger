@@ -1,7 +1,6 @@
 package com.senz.positionlogger;
 
 import android.app.Service;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -9,7 +8,6 @@ import android.location.Location;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
-import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.os.Process;
 
@@ -27,10 +25,10 @@ public class LoggerService extends Service {
     public static final int DATABASE_VERSION = 1;
     public static final String SHARED_PREFERENCES_NAME = "logger_service_config";
     public static boolean started = false;
-    private static long intervalMillis;
-    private static boolean autoStart;
-    private static String userId;
-    private static WakeLock wakeLock;
+    protected static long intervalMillis;
+    protected static boolean autoStart;
+    protected static String userId;
+    protected static WakeLock wakeLock;
 
     private HandlerThread mHT;
     private Handler mHandler;
@@ -80,12 +78,12 @@ public class LoggerService extends Service {
         return START_STICKY;
     }
 
-    private static void initConfiguration(Context context) {
+    protected static void initConfiguration(Context context) {
         SharedPreferences sp;
         sp = context.getSharedPreferences(SHARED_PREFERENCES_NAME, MODE_PRIVATE);
 
         autoStart = sp.getBoolean("autoStart", false);
-        intervalMillis = TimeUnit.SECONDS.toMillis(sp.getInt("interval", 15));
+        intervalMillis = TimeUnit.MINUTES.toMillis(sp.getInt("interval", 15));
         userId = sp.getString("userId", Settings.Secure.ANDROID_ID);
     }
 
@@ -141,19 +139,6 @@ public class LoggerService extends Service {
         }
     };
 
-    private BroadcastReceiver startupReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            initConfiguration(context);
-            if (autoStart) {
-                L.d("autostarting service");
-                PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-                wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Starting logger service");
-                wakeLock.acquire();
-                startService(new Intent(context, LoggerService.class));
-            }
-        }
-    };
 
     private OnSharedPreferenceChangeListener onSharedPreferenceChangeListener = new OnSharedPreferenceChangeListener() {
         @Override
